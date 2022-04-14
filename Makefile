@@ -1,7 +1,7 @@
 all: push
 
 TAG = 1.0
-PREFIX = danielqsj/k8s-slackbot
+PREFIX = alllomancer/k8s-slackbot
 
 REPO_INFO=$(shell git config --get remote.origin.url)
 
@@ -10,7 +10,7 @@ ifndef VERSION
 endif
 
 # base package. It contains the common and backends code
-PKG := "github.com/danielqsj/k8s-slackbot"
+PKG := "github.com/alllomancer/k8s-slackbot"
 
 GO_LIST_FILES=$(shell go list ${PKG}/... | grep -v vendor | grep -v -e "test/e2e")
 

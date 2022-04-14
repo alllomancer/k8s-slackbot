@@ -5,14 +5,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/danielqsj/k8s-slackbot/server"
-	"github.com/danielqsj/k8s-slackbot/server/options"
+	"github.com/alllomancer/k8s-slackbot/server"
+	"github.com/alllomancer/k8s-slackbot/server/options"
 )
 
 var (
 	// value overwritten during build. This can be used to resolve issues.
 	version = "1.0"
-	gitRepo = "https://github.com/danielqsj/k8s-slackbot"
+	gitRepo = "https://github.com/alllomancer/k8s-slackbot"
 )
 
 func main() {

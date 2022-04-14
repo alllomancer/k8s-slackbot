@@ -8,7 +8,7 @@ import (
 
 	"github.com/nlopes/slack"
 
-	"github.com/danielqsj/k8s-slackbot/pkg/kubernetes"
+	"github.com/alllomancer/k8s-slackbot/pkg/kubernetes"
 )
 
 // SlackBot defines a slack client

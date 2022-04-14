@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/danielqsj/k8s-slackbot/pkg/kubernetes"
-	"github.com/danielqsj/k8s-slackbot/pkg/slack"
-	"github.com/danielqsj/k8s-slackbot/server/options"
+	"github.com/alllomancer/k8s-slackbot/pkg/kubernetes"
+	"github.com/alllomancer/k8s-slackbot/pkg/slack"
+	"github.com/alllomancer/k8s-slackbot/server/options"
 )
 
 // SlackBotServer defines struct of slack bot server

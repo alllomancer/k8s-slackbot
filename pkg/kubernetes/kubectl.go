@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/kubectl/cmd"
-	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"k8s.io/kubectl/pkg/cmd"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
 
 // RunKubectl run kubectl command and return result
