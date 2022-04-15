@@ -1,36 +1,31 @@
 # K8S Slackbot
-[![Build Status](https://travis-ci.org/danielqsj/k8s-slackbot.svg?branch=master)](https://travis-ci.org/danielqsj/k8s-slackbot)
-[![Coverage Status](https://coveralls.io/repos/github/danielqsj/k8s-slackbot/badge.svg?branch=master)](https://coveralls.io/github/danielqsj/k8s-slackbot?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/danielqsj/k8s-slackbot)](https://goreportcard.com/report/github.com/danielqsj/k8s-slackbot)
-
 A slack bot built to control kubernetes cluster.
+based on https://github.com/danielqsj/k8s-slackbot 
+
 
 Image
 -------------
-[![Docker Stars](https://img.shields.io/docker/stars/danielqsj/k8s-slackbot.svg?style=flat)](https://hub.docker.com/r/danielqsj/k8s-slackbot/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/danielqsj/k8s-slackbot.svg?style=flat)](https://hub.docker.com/r/danielqsj/k8s-slackbot/)
-[![Docker Automated build](https://img.shields.io/docker/automated/danielqsj/k8s-slackbot.svg?style=flat)](https://hub.docker.com/r/danielqsj/k8s-slackbot/)
+the build is multi staged
+the first stage is based on go 1.18 image and builds the artifact
 
-This image is based on Alpine Linux image, which is only a 5MB image.
-Download size of this image is only:
-
-[![](https://images.microbadger.com/badges/version/danielqsj/k8s-slackbot.svg)](https://microbadger.com/images/danielqsj/k8s-slackbot "Get your own version badge on microbadger.com")
-[![](https://images.microbadger.com/badges/image/danielqsj/k8s-slackbot.svg)](https://microbadger.com/images/danielqsj/k8s-slackbot "Get your own image badge on microbadger.com")
+afterwards the next stage copies the artifact and all connecting dynamic libraries to a busybox image
+total size of the final image: 11 MB
 
 Arguments
 -------------
-- **kubecfg-file** (*string*): Location of kubecfg file for access to kubernetes master service; --kube-master-url overrides the URL part of this; if neither this nor --kube-master-url are provided, defaults to service account tokens
+- **kubecfg-file** (*string*): Location of kubecfg file for access to kubernetes master service;
 - **bot-token** (*string*): Token of slack bot to use
 - **debug** (*boolean*): Whether enable debug log
 
 Usage
 -------------
 ```
-$ docker pull danielqsj/k8s-slackbot
-$ docker run -v ~/.kube/config:/etc/kubernetes/kubeconfig danielqsj/k8s-slackbot --kubecfg-file=/etc/kubernetes/kubeconfig --bot-token=$(bot-token)
+$ docker build -t k8s-slackbot .
+$ docker run -v ~/.kube/config:/etc/kubernetes/kubeconfig k8s-slackbot --kubecfg-file=/etc/kubernetes/kubeconfig --bot-token=$(bot-token)
 ```
 Then you can talk to your slack bot via slack direct message.
-The command is same as [kubectl](https://kubernetes.io/docs/user-guide/kubectl/) .
-Such as ``` kubectl get nodes``` .
+there are 2 commands:
+- **list** - return a list of running pods, their age, and their version
+- **logs** - takes 2 argument for the pod name and tail limit and return the number of tail logs from the pod 
 
 **Enjoy it.**

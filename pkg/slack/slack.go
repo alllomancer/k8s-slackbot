@@ -2,13 +2,12 @@ package slack
 
 import (
 	"fmt"
+	"github.com/alllomancer/k8s-slackbot/pkg/kubernetes"
+	"github.com/oriser/regroup"
 	"log"
 	"os"
 	"strings"
-
-	"github.com/nlopes/slack"
-
-	"github.com/alllomancer/k8s-slackbot/pkg/kubernetes"
+	"github.com/slack-go/slack"
 )
 
 // SlackBot defines a slack client
@@ -16,22 +15,22 @@ type SlackBot struct {
 	Client *slack.Client
 }
 
-// InitSlackLog inits slack log
-func InitSlackLog() {
-	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
-	slack.SetLogger(logger)
+type service struct {
+	Name    string
+	Age     string
+	Version string
 }
 
-// NewSlackBot returns new slackbot with token
+var services []service
+
 func NewSlackBot(token string) SlackBot {
 	return SlackBot{
-		Client: slack.New(token),
+		Client: slack.New(
+			token,
+			slack.OptionDebug(true),
+			slack.OptionLog(log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)),
+		),
 	}
-}
-
-// EnableDebug enables debug log
-func (bot SlackBot) EnableDebug() {
-	bot.Client.SetDebug(true)
 }
 
 // RunSlackRTMServer runs rtm server
@@ -48,16 +47,46 @@ func (bot SlackBot) RunSlackRTMServer(kubeconfig string) {
 				args := input[1:]
 				log.Printf("command: %v, args: %v", command, args)
 				switch command {
-				case "kubectl":
-					if len(args) > 0 {
-						output, err := kubernetes.RunKubectl(kubeconfig, args)
+				case "list":
+
+					result, err := kubernetes.RunGet(kubeconfig)
+					if err != nil {
+						rtm.SendMessage(rtm.NewOutgoingMessage(err.Error(), ev.Msg.Channel))
+					}
+					var re = regroup.MustCompile(`(?m)[a-z].* (?P<name>[a-z].*\S) .*\d/\d.* (?P<age>\d.*[d])`)
+					for _, line := range strings.Split(strings.TrimSuffix(result, "\n"), "\n") {
+
+						matches, err := re.Groups(line)
+						if err == nil {
+							version, err := kubernetes.RunExec(kubeconfig, matches["name"])
+							if err != nil {
+								rtm.SendMessage(rtm.NewOutgoingMessage(err.Error(), ev.Msg.Channel))
+							}
+							services = append(services, service{Name: matches["name"], Age: matches["age"], Version: version})
+						}
+
+					}
+					if err != nil {
+						rtm.SendMessage(rtm.NewOutgoingMessage(err.Error(), ev.Msg.Channel))
+					} else {
+						rtm.SendMessage(rtm.NewOutgoingMessage(fmt.Sprintf("%+v", services), ev.Msg.Channel))
+					}
+
+				case "logs":
+					if len(args) == 2 {
+
+						output, err := kubernetes.RunLogs(kubeconfig, args[0], args[1])
 						if err != nil {
 							rtm.SendMessage(rtm.NewOutgoingMessage(err.Error(), ev.Msg.Channel))
 						} else {
 							rtm.SendMessage(rtm.NewOutgoingMessage(output, ev.Msg.Channel))
 						}
 					}
+					rtm.SendMessage(rtm.NewOutgoingMessage("wrong number of args, command is `logs [pod] [tail limit]`", ev.Msg.Channel))
+				default:
+					rtm.SendMessage(rtm.NewOutgoingMessage("allowed commands are `list` and `logs [pod] [tail limit]`", ev.Msg.Channel))
 				}
+
 			}
 
 		case *slack.InvalidAuthEvent:
@@ -66,66 +95,7 @@ func (bot SlackBot) RunSlackRTMServer(kubeconfig string) {
 
 		case *slack.RTMError:
 			log.Printf("Error: %s\n", ev.Error())
-
 		default:
 		}
 	}
-}
-
-// GetUserName returns username by userid
-func (bot SlackBot) GetUserName(userId string) string {
-	user, err := bot.Client.GetUserInfo(userId)
-	if err != nil {
-		bot.Client.Debugf("GetUserName err: %s\n", err)
-		return ""
-	}
-	return user.Profile.FirstName + " " + user.Profile.LastName
-}
-
-// GetUserId returns userid by username
-func (bot SlackBot) GetUserId(userName string) (string, error) {
-	users, err := bot.Client.GetUsers()
-	if err != nil {
-		return "", err
-	}
-	for _, user := range users {
-		if user.Name == userName {
-			return user.ID, nil
-		}
-	}
-	return "", fmt.Errorf("Cannot find this user %s", userName)
-}
-
-// SendMessage sends message to users
-func (bot SlackBot) SendMessage(userNames []string, message string) {
-	params := slack.PostMessageParameters{}
-	for _, userName := range userNames {
-		userId, err := bot.GetUserId(userName)
-		if err != nil {
-			log.Printf("GetUserId err: %s\n", err)
-			return
-		}
-		channelID, timestamp, err := bot.Client.PostMessage(userId, message, params)
-		if err != nil {
-			log.Printf("Send slack message err: %s\n", err)
-			return
-		}
-		log.Printf("Send slack message successfully to channel %s at %s", channelID, timestamp)
-	}
-}
-
-// SendMessages sends messages to a user
-func (bot SlackBot) SendMessages(userName string, message []string) {
-	params := slack.PostMessageParameters{}
-	userId, err := bot.GetUserId(userName)
-	if err != nil {
-		log.Printf("GetUserId err: %s\n", err)
-		return
-	}
-	channelID, timestamp, err := bot.Client.PostMessage(userId, strings.Join(message, "\n"), params)
-	if err != nil {
-		log.Printf("Send slack message err: %s\n", err)
-		return
-	}
-	log.Printf("Send slack message successfully to channel %s at %s", channelID, timestamp)
 }

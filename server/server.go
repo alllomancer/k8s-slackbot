@@ -31,11 +31,11 @@ func NewSlackBotServerDefault(config *options.SlackBotServerConfig) *SlackBotSer
 		kubeConfigFile: config.KubeConfigFile,
 		debugEnable:    config.DebugEnable,
 	}
-	output, err := kubernetes.ConnectMaster(s.kubeConfigFile)
+	_, err := kubernetes.RunGetNodes(s.kubeConfigFile)
 	if err != nil {
-		log.Fatal("Connect to kubernetes master failed\n")
+		log.Fatal("Connect to kubernetes failed: %s\n", err)
 	} else {
-		log.Printf("Connect to kubernetes master successful:\n%s\n", output)
+		log.Printf("Connect to kubernetes successful\n")
 	}
 	s.slackBot = slack.NewSlackBot(s.botToken)
 	return &s
@@ -65,9 +65,5 @@ func (server *SlackBotServer) setupHealthzHandlers() {
 
 // start starts server
 func (server *SlackBotServer) start() {
-	slack.InitSlackLog()
-	if server.debugEnable {
-		server.slackBot.EnableDebug()
-	}
 	go server.slackBot.RunSlackRTMServer(server.kubeConfigFile)
 }

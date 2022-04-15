@@ -1,36 +1,34 @@
 package kubernetes
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
-
-	"k8s.io/kubectl/pkg/cmd"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	"os/exec"
 )
 
-// RunKubectl run kubectl command and return result
-func RunKubectl(kubeconfig string, args []string) (string, error) {
-	var b bytes.Buffer
-	cmdOut := &b
-	cmdErr := &b
-	cmd := cmd.NewKubectlCommand(cmdutil.NewFactory(nil), strings.NewReader(""), cmdOut, cmdErr)
-	if len(kubeconfig) > 0 {
-		args = AppendKubeconfig(kubeconfig, args)
-	}
-	cmd.SetArgs(args)
-	err := cmd.Execute()
-	return fmt.Sprintf("%s\n", b.String()), err
+func RunLogs(kubeconfig, pod, line string) (string, error) {
+
+	cmdline := "/usr/local/bin/kubectl"
+	out, err := exec.Command(cmdline, "--kubeconfig="+kubeconfig, "logs", "--tail="+line, pod).Output()
+	return fmt.Sprintf("%s", out), err
 }
 
-// AppendKubeconfig append param kubeconfig
-func AppendKubeconfig(kubeconfig string, args []string) []string {
-	newKubeconfig := "--kubeconfig=" + kubeconfig
-	return append(args, newKubeconfig)
+func RunGet(kubeconfig string) (string, error) {
+
+	cmdline := "/usr/local/bin/kubectl"
+	out, err := exec.Command(cmdline, "--kubeconfig="+kubeconfig, "get", "pods", "--all-namespaces").Output()
+	return fmt.Sprintf("%s", out), err
 }
 
-// ConnectMaster connect to kubernetes master
-func ConnectMaster(kubeconfig string) (string, error) {
-	args := []string{"version"}
-	return RunKubectl(kubeconfig, args)
+func RunExec(kubeconfig, pod string) (string, error) {
+
+	cmdline := "/usr/local/bin/kubectl"
+	out, err := exec.Command(cmdline, "--kubeconfig="+kubeconfig, "exec", "-it", "-n", "kube-system", pod, "--", "curl", "http://localhost/version").Output()
+	return fmt.Sprintf("%s", out), err
+}
+
+func RunGetNodes(kubeconfig string) (string, error) {
+
+	cmdline := "/usr/local/bin/kubectl"
+	out, err := exec.Command(cmdline, "--kubeconfig="+kubeconfig, "get", "nodes").Output()
+	return fmt.Sprintf("%s", out), err
 }
